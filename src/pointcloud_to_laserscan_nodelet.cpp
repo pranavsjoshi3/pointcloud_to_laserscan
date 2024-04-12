@@ -195,6 +195,7 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
     cloud_out = cloud_msg;
   }
 
+  int n=0;
   // Iterate through pointcloud
   for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(*cloud_out, "x"), iter_y(*cloud_out, "y"),
        iter_z(*cloud_out, "z");
@@ -226,20 +227,41 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
       continue;
     }
 
-    double angle = atan2(*iter_y, *iter_x);
-    if (angle < output.angle_min || angle > output.angle_max)
+    double angle_origin = atan2(*iter_y, *iter_x);
+    // Transforms the angle into the (angle_min, angle_max) range.
+    double angle = angle_origin + n * 2 * M_PI;
+    while (angle < output.angle_min)
     {
-      NODELET_DEBUG("rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
+      ++n;
+      angle = angle_origin + n * 2 * M_PI;
+    }
+    if(angle <= output.angle_max){
+      // overwrite range at laserscan ray if new range is smaller
+      int index = (angle - output.angle_min) / output.angle_increment;
+      if (range < output.ranges[index])
+      {
+        output.ranges[index] = range;
+      }
       continue;
+    }else{
+      while(angle > output.angle_max){
+        --n;
+        angle = angle_origin + n * 2 * M_PI;
+      }
+      if(angle>=output.angle_min){
+        // overwrite range at laserscan ray if new range is smaller
+        int index = (angle - output.angle_min) / output.angle_increment;
+        if (range < output.ranges[index])
+        {
+          output.ranges[index] = range;
+        }
+        continue;
+      }
     }
-
-    // overwrite range at laserscan ray if new range is smaller
-    int index = (angle - output.angle_min) / output.angle_increment;
-    if (range < output.ranges[index])
-    {
-      output.ranges[index] = range;
-    }
+    
+    NODELET_DEBUG("rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
   }
+
   pub_.publish(output);
 }
 }  // namespace pointcloud_to_laserscan
