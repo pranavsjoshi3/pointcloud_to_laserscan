@@ -95,7 +95,7 @@ namespace pointcloud_to_laserscan
         range_max_;
     bool use_inf_;
     double inf_epsilon_;
-    bool use_sensor_qos_settings_;
+    bool use_system_default_qos_settings_;
   };
 
 } // namespace pointcloud_to_laserscan

@@ -74,13 +74,14 @@ namespace pointcloud_to_laserscan
     range_max_ = this->declare_parameter("range_max", std::numeric_limits<double>::max());
     inf_epsilon_ = this->declare_parameter("inf_epsilon", 1.0);
     use_inf_ = this->declare_parameter("use_inf", true);
-    use_sensor_qos_settings_ = this->declare_parameter("use_sensor_qos_settings", true);
+    use_system_default_qos_settings_ = this->declare_parameter("use_system_default_qos_settings", true);
 
+    // Reference : stereo_image_proc/src/stereo_image_proc/disparity_node.cpp
     rclcpp::QoS system_default_qos = rclcpp::SystemDefaultsQoS();
     rclcpp::QoS sensor_data_qos = rclcpp::SensorDataQoS();
-    rclcpp::QoS qos = use_sensor_qos_settings_ ? sensor_data_qos : system_default_qos;
+    rclcpp::QoS qos = use_system_default_qos_settings_ ? sensor_data_qos : system_default_qos;
 
-    pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS());
+    pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", qos);
 
     using std::placeholders::_1;
     // if pointcloud target frame specified, we need to filter by transform availability
